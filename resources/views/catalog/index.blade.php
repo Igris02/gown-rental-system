@@ -8,74 +8,112 @@
         <p class="count">{{ $gowns->total() }} {{ \Illuminate\Support\Str::plural('gown', $gowns->total()) }} found</p>
     </div>
 
+    @php
+        $search = is_string(request('search')) ? trim(request('search')) : '';
+        $sortNames = ['price_low' => 'Price: low to high', 'price_high' => 'Price: high to low', 'name' => 'Name: A to Z'];
+
+        // One chip per filter in use: [query key, text]. Tapping a chip removes just that filter.
+        $chips = [];
+        if ($search !== '') { $chips[] = ['search', 'Search: ' . \Illuminate\Support\Str::limit($search, 24)]; }
+        if (is_string(request('color')) && request('color') !== '') { $chips[] = ['color', request('color')]; }
+        if (is_string(request('size')) && request('size') !== '') { $chips[] = ['size', 'Size ' . request('size')]; }
+        if (is_string(request('silhouette')) && request('silhouette') !== '') { $chips[] = ['silhouette', request('silhouette')]; }
+        if (isset($sortNames[$sort])) { $chips[] = ['sort', $sortNames[$sort]]; }
+
+        // The number on the Filters button counts everything except the search words, which are always in view
+        $filterCount = count(array_filter($chips, fn ($chip) => $chip[0] !== 'search'));
+        $without = fn (string $key) => route('catalog.index', collect(request()->query())->except([$key, 'page'])->all());
+    @endphp
+
     <form method="GET" action="{{ route('catalog.index') }}" class="filters" data-filters>
-        <input
-            type="search"
-            name="search"
-            value="{{ request('search') }}"
-            placeholder="Search name, design, color, or code"
-            aria-label="Search gowns"
-        >
-
-        <select name="color" aria-label="Filter by color">
-            <option value="">All colors</option>
-            @foreach ($colors as $color)
-                <option value="{{ $color }}" @selected(request('color') === $color)>{{ $color }}</option>
-            @endforeach
-        </select>
-
-        <select name="size" aria-label="Filter by size">
-            <option value="">All sizes</option>
-            @foreach ($sizes as $size)
-                <option value="{{ $size }}" @selected(request('size') === $size)>Size {{ $size }}</option>
-            @endforeach
-        </select>
-
-        <select name="silhouette" aria-label="Filter by silhouette">
-            <option value="">All silhouettes</option>
-            @foreach ($silhouettes as $silhouette)
-                <option value="{{ $silhouette }}" @selected(request('silhouette') === $silhouette)>{{ $silhouette }}</option>
-            @endforeach
-        </select>
-
-        <label class="date-filter">
-            <span>Pick-up date</span>
+        <div class="filter-search">
             <input
-                type="date"
-                name="date"
-                value="{{ $pickup }}"
-                min="{{ $minDate }}"
-                max="{{ $maxDate }}"
-                aria-label="Show only gowns that are free for 3 days starting on this date"
+                type="search"
+                name="search"
+                value="{{ $search }}"
+                placeholder="Search name, design, color, or code"
+                aria-label="Search gowns"
             >
-        </label>
+            <button type="submit" class="btn">Search</button>
+        </div>
 
-        <select name="sort" aria-label="Sort gowns">
-            <option value="newest" @selected($sort === 'newest')>Newest</option>
-            <option value="price_low" @selected($sort === 'price_low')>Price: low to high</option>
-            <option value="price_high" @selected($sort === 'price_high')>Price: high to low</option>
-            <option value="name" @selected($sort === 'name')>Name: A to Z</option>
-        </select>
+        <button type="button" class="filter-toggle" data-filter-toggle aria-expanded="false" aria-controls="filter-panel">
+            <span>Filters @if ($filterCount > 0)<span class="filter-count" aria-label="{{ $filterCount }} in use">{{ $filterCount }}</span>@endif</span>
+            <span class="filter-chevron" aria-hidden="true"></span>
+        </button>
 
-        <button type="submit" class="btn">Search</button>
+        <div class="filter-panel" id="filter-panel" data-filter-panel>
+            <div class="filter-grid">
+                <div class="filter-field">
+                    <label for="filter-color">Color</label>
+                    <select id="filter-color" name="color">
+                        <option value="">All colors</option>
+                        @foreach ($colors as $color)
+                            <option value="{{ $color }}" @selected(request('color') === $color)>{{ $color }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-        @if ($hasFilters)
-            <a href="{{ route('catalog.index') }}">Clear</a>
-        @endif
+                <div class="filter-field">
+                    <label for="filter-size">Size</label>
+                    <select id="filter-size" name="size">
+                        <option value="">All sizes</option>
+                        @foreach ($sizes as $size)
+                            <option value="{{ $size }}" @selected(request('size') === $size)>Size {{ $size }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label for="filter-silhouette">Silhouette</label>
+                    <select id="filter-silhouette" name="silhouette">
+                        <option value="">All silhouettes</option>
+                        @foreach ($silhouettes as $silhouette)
+                            <option value="{{ $silhouette }}" @selected(request('silhouette') === $silhouette)>{{ $silhouette }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label for="filter-sort">Sort by</label>
+                    <select id="filter-sort" name="sort">
+                        <option value="newest" @selected($sort === 'newest')>Newest</option>
+                        <option value="price_low" @selected($sort === 'price_low')>Price: low to high</option>
+                        <option value="price_high" @selected($sort === 'price_high')>Price: high to low</option>
+                        <option value="name" @selected($sort === 'name')>Name: A to Z</option>
+                    </select>
+                </div>
+
+                
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn">Apply filters</button>
+                @if ($hasFilters)
+                    <a href="{{ route('catalog.index') }}">Clear all</a>
+                @endif
+            </div>
+        </div>
     </form>
 
-    @if ($pickup)
-        <p class="date-note">
-            Showing gowns that are free for all 3 days:
-            pick up {{ \Illuminate\Support\Carbon::parse($pickup)->format('D, M j') }},
-            return {{ \Illuminate\Support\Carbon::parse($pickupEnd)->format('D, M j, Y') }}.
-        </p>
+    @if (count($chips) > 0)
+        <div class="chips" aria-label="Filters in use">
+            @foreach ($chips as [$key, $text])
+                <a href="{{ $without($key) }}" class="chip" aria-label="Remove filter: {{ $text }}">
+                    <span>{{ $text }}</span>
+                    <span class="chip-x" aria-hidden="true">&times;</span>
+                </a>
+            @endforeach
+            <a href="{{ route('catalog.index') }}" class="chips-clear">Clear all</a>
+        </div>
     @endif
+
+   
 
     @if ($gowns->count())
         <div class="grid">
             @foreach ($gowns as $gown)
-                <a href="{{ route('catalog.show', ['gown' => $gown, 'date' => $pickup]) }}" class="card">
+                <a href="{{ route('catalog.show', ['gown' => $gown]) }}" class="card">
                     <div class="card-image">
                         @if ($gown->card_url)
                             <img src="{{ $gown->card_url }}" alt="{{ $gown->name }}" loading="lazy">

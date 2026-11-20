@@ -1,50 +1,49 @@
-/* Mobile menu. Phones and small tablets only: on wider screens this file changes nothing. */
+/* Phone menu: a side bar that slides in from the left.
+   Wider than 760px nothing here changes the layout, so the desktop top bar stays as it is. */
+
+/* Desktop: the drawer wrapper does not exist as a box, so nav and user box sit in the bar as before */
+.menu-drawer {
+    display: contents;
+}
 
 .menu-toggle,
+.menu-backdrop,
+.menu-drawer-head,
+.brand-short,
 .mobile-only {
     display: none;
 }
 
 @media (max-width: 760px) {
+    /* ---- The slim top bar: [menu button] KGC ---- */
     .topbar-inner {
-        padding: 10px 16px;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
         gap: 0 12px;
+        padding: 8px 12px;
     }
 
-    .brand {
-        order: 1;
-        padding: 10px 0;
-    }
-
-    /* The Menu button, on the right of the brand */
     .menu-toggle {
-        order: 2;
         display: inline-flex;
+        flex: 0 0 auto;
         align-items: center;
-        gap: 10px;
-        margin-left: auto;
-        min-height: 44px;
-        padding: 0 14px;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
         border: 1px solid var(--black);
         background: var(--white);
         color: var(--black);
-        font: inherit;
-        font-size: 14px;
-        font-weight: 600;
         cursor: pointer;
     }
 
-    .menu-toggle:focus-visible {
+    .menu-toggle:focus-visible,
+    .menu-close:focus-visible {
         outline: 2px solid var(--black);
         outline-offset: 2px;
     }
 
-    .menu-toggle[aria-expanded="true"] {
-        background: var(--black);
-        color: var(--white);
-    }
-
-    /* Three lines that turn into an X when the menu is open */
+    /* Three lines */
     .menu-bars,
     .menu-bars::before,
     .menu-bars::after {
@@ -52,7 +51,6 @@
         width: 18px;
         height: 2px;
         background: currentColor;
-        transition: transform 0.15s ease, background-color 0.15s ease;
     }
 
     .menu-bars {
@@ -74,82 +72,182 @@
         top: 6px;
     }
 
-    .menu-toggle[aria-expanded="true"] .menu-bars {
-        background: transparent;
+    /* KGC instead of the full shop name */
+    .brand {
+        font-size: 15px;
+        letter-spacing: 0.18em;
     }
 
-    .menu-toggle[aria-expanded="true"] .menu-bars::before {
-        top: 0;
-        transform: rotate(45deg);
-    }
-
-    .menu-toggle[aria-expanded="true"] .menu-bars::after {
-        top: 0;
-        transform: rotate(-45deg);
-    }
-
-    /* The menu itself. With JavaScript it starts closed; without it, the links just stay visible. */
-    .topbar nav,
-    .topbar .user-box {
-        order: 3;
-        flex: 0 0 100%;
-    }
-
-    .js .topbar nav,
-    .js .topbar .user-box {
+    .brand-full {
         display: none;
     }
 
-    .js .topbar.is-open nav {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-        margin-top: 10px;
-        border-top: 1px solid var(--black);
+    .brand-short {
+        display: inline;
     }
 
-    .topbar nav a,
+    /* ---- The side bar ---- */
+    .menu-drawer {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1001;
+        width: min(84vw, 320px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: var(--white);
+        border-right: 1px solid var(--black);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .menu-drawer-head {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 8px 8px 20px;
+        border-bottom: 1px solid var(--black);
+    }
+
+    .menu-drawer-title {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+
+    .menu-close {
+        flex: 0 0 auto;
+        width: 44px;
+        height: 44px;
+        border: 0;
+        background: none;
+        color: var(--black);
+        font-size: 30px;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .menu-drawer nav {
+        display: flex;
+        flex: 1 0 auto;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .menu-drawer nav a,
     .mobile-only {
         display: block;
-        padding: 14px 4px;
+        padding: 15px 20px;
         border-bottom: 1px solid var(--black);
         font-size: 16px;
     }
 
-    /* Links that only exist in the phone menu */
-    .topbar nav a.mobile-only {
+    .menu-drawer nav a.mobile-only {
         display: block;
     }
 
-    .topbar nav a[aria-current="page"] {
-        font-weight: 700;
+    .menu-drawer nav a[aria-current="page"] {
+        padding-left: 16px;
         border-left: 4px solid var(--black);
-        padding-left: 12px;
+        font-weight: 700;
     }
 
-    .js .topbar.is-open .user-box {
-        display: flex;
+    .menu-drawer .user-box {
+        flex: 0 0 auto;
+        flex-wrap: wrap;
         justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 4px 6px;
+        gap: 8px 12px;
+        padding: 16px 20px;
+        border-top: 1px solid var(--black);
         font-size: 15px;
     }
 
-    .user-box .link-btn,
-    .user-box a {
-        min-height: 44px;
+    .menu-drawer .user-box .link-btn,
+    .menu-drawer .user-box a {
         display: inline-flex;
         align-items: center;
+        min-height: 44px;
     }
 
-    .user-box .btn-small {
-        padding: 0 16px;
+    .menu-drawer .user-box .btn-small {
         justify-content: center;
+        padding: 0 16px;
     }
 
-    /* Without JavaScript, keep the links tidy instead of hiding them */
-    .topbar nav {
+    /* The dark cover behind the open side bar */
+    .menu-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.55);
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    /* With JavaScript the side bar starts closed and slides in. Without it, the menu simply
+       sits under the top bar so nobody is locked out. */
+    .js .menu-drawer {
+        transform: translateX(-100%);
+        visibility: hidden;
+        transition: transform 0.2s ease, visibility 0s linear 0.2s;
+    }
+
+    .js .menu-backdrop {
+        transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+    }
+
+    .js .topbar.is-open .menu-drawer {
+        transform: translateX(0);
+        visibility: visible;
+        transition: transform 0.2s ease, visibility 0s;
+    }
+
+    .js .topbar.is-open .menu-backdrop {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.2s ease, visibility 0s;
+    }
+
+    html.menu-open {
+        overflow: hidden;
+    }
+
+    html:not(.js) .topbar-inner {
         flex-wrap: wrap;
+    }
+
+    html:not(.js) .menu-toggle,
+    html:not(.js) .menu-drawer-head {
+        display: none;
+    }
+
+    html:not(.js) .menu-drawer {
+        position: static;
+        flex: 0 0 100%;
+        width: auto;
+        border-right: 0;
+    }
+
+    html:not(.js) .brand-full {
+        display: inline;
+    }
+
+    html:not(.js) .brand-short {
+        display: none;
+    }
+}
+
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) {
+    .js .menu-drawer,
+    .js .menu-backdrop,
+    .js .topbar.is-open .menu-drawer,
+    .js .topbar.is-open .menu-backdrop {
+        transition: none;
     }
 }

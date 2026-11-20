@@ -8,16 +8,33 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Catalog filters: apply the color, size, silhouette, pick-up date, and sort filters as soon
-    // as one is changed. The Search button still works for typed searches, and without JS.
+    // Catalog filters. The Search button still works for typed searches, and without JS.
     var filterForm = document.querySelector('form[data-filters]');
 
     if (filterForm) {
+        var wide = window.matchMedia('(min-width: 761px)');
+
+        // On a computer the filters apply as soon as one is changed. On a phone the page would
+        // reload while the panel is still open, so there the Apply filters button does it.
         filterForm.querySelectorAll('select, input[type="date"]').forEach(function (field) {
             field.addEventListener('change', function () {
-                filterForm.submit();
+                if (wide.matches) {
+                    filterForm.submit();
+                }
             });
         });
+
+        // The Filters button on phones folds the panel open and closed
+        var toggle = filterForm.querySelector('[data-filter-toggle]');
+
+        if (toggle) {
+            toggle.addEventListener('click', function () {
+                var open = !filterForm.classList.contains('is-open');
+
+                filterForm.classList.toggle('is-open', open);
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        }
     }
 
     // Photo zoom: click the photo to open the 1200 x 1600 version

@@ -156,20 +156,7 @@ h1 {
     font-size: 14px;
 }
 
-/* Filters */
-.filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 28px;
-}
-
-.filters input[type="search"] {
-    flex: 1;
-    min-width: 240px;
-}
-
+/* Filters: search on top, the rest in a labelled panel */
 input[type="search"],
 input[type="date"],
 input[type="tel"],
@@ -511,7 +498,7 @@ textarea:focus {
 }
 
 .date-note {
-    margin: -12px 0 20px;
+    margin: 0 0 20px;
     padding: 10px 14px;
     border: 1px solid var(--black);
     border-left-width: 6px;
@@ -591,4 +578,196 @@ tbody tr:last-child td {
 
 .reserve input[type="tel"] {
     width: 100%;
+}
+
+/* ===== Catalog filters ===== */
+.filters {
+    margin-bottom: 20px;
+}
+
+.filter-search {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-search input[type="search"] {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    font-size: 16px;
+}
+
+.filter-search .btn {
+    flex: 0 0 auto;
+    min-height: 44px;
+}
+
+/* The Filters button is only for phones; wider screens show the panel all the time */
+.filter-toggle {
+    display: none;
+}
+
+.filter-panel {
+    margin-top: 14px;
+    padding: 16px;
+    border: 1px solid var(--black);
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px 16px;
+}
+
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.filter-field label {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.filter-field select,
+.filter-field input[type="date"] {
+    width: 100%;
+    min-height: 44px;
+    font-size: 16px;
+}
+
+.filter-help {
+    font-size: 12px;
+}
+
+.filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--black);
+}
+
+/* What is being filtered, each one removable */
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 20px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--black);
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.chip:hover,
+.chip:focus-visible {
+    background: var(--black);
+    color: var(--white);
+}
+
+.chip-x {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.chips-clear {
+    padding: 0 4px;
+    font-size: 14px;
+}
+
+@media (max-width: 760px) {
+    .filter-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        min-height: 44px;
+        margin-top: 10px;
+        padding: 0 14px;
+        border: 1px solid var(--black);
+        background: var(--white);
+        color: var(--black);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .filter-toggle[aria-expanded="true"] {
+        background: var(--black);
+        color: var(--white);
+    }
+
+    .filter-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        margin-left: 8px;
+        padding: 0 6px;
+        border: 1px solid currentColor;
+        font-size: 12px;
+    }
+
+    /* An arrow that flips when the panel is open */
+    .filter-chevron {
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg) translate(-2px, -2px);
+    }
+
+    .filter-toggle[aria-expanded="true"] .filter-chevron {
+        transform: rotate(-135deg) translate(-2px, -2px);
+    }
+
+    /* With JavaScript the panel starts folded away; without it, it just stays open */
+    .js .filter-panel {
+        display: none;
+    }
+
+    .js .filters.is-open .filter-panel {
+        display: block;
+    }
+
+    html:not(.js) .filter-toggle {
+        display: none;
+    }
+
+    .filter-panel {
+        margin-top: 10px;
+        padding: 14px;
+    }
+
+    .filter-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .filter-field-wide {
+        grid-column: 1 / -1;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .filter-actions .btn {
+        min-height: 48px;
+    }
 }
