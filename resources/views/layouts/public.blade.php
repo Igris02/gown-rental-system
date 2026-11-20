@@ -6,16 +6,25 @@
     <title>@yield('title') | {{ config('app.name') }}</title>
     <link rel="stylesheet" href="{{ asset('css/catalog.css') }}">
     <link rel="stylesheet" href="{{ asset('css/calendar.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/menu.css') }}">
+    <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
             <a class="brand" href="{{ route('catalog.index') }}">{{ config('app.name') }}</a>
 
-            <nav>
-                <a href="{{ route('catalog.index') }}">Catalog</a>
+            <button type="button" class="menu-toggle" data-menu-toggle aria-expanded="false" aria-controls="site-menu" aria-label="Open menu">
+                <span class="menu-bars" aria-hidden="true"></span>
+                <span data-menu-label>Menu</span>
+            </button>
+
+            <nav id="site-menu" aria-label="Main menu">
+                <a href="{{ route('catalog.index') }}" @if (request()->routeIs('catalog.*')) aria-current="page" @endif>Catalog</a>
                 @auth
-                    <a href="{{ route('reservations.index') }}">My reservations</a>
+                    <a href="{{ route('reservations.index') }}" @if (request()->routeIs('reservations.*')) aria-current="page" @endif>My reservations</a>
+                    {{-- Only shown in the phone menu --}}
+                    <a href="{{ route('dashboard') }}" class="mobile-only">Dashboard</a>
                 @endauth
             </nav>
 
@@ -52,5 +61,6 @@
 
     <script src="{{ asset('js/catalog.js') }}" defer></script>
     <script src="{{ asset('js/reservation.js') }}" defer></script>
+    <script src="{{ asset('js/menu.js') }}" defer></script>
 </body>
 </html>

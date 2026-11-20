@@ -1,0 +1,155 @@
+/* Mobile menu. Phones and small tablets only: on wider screens this file changes nothing. */
+
+.menu-toggle,
+.mobile-only {
+    display: none;
+}
+
+@media (max-width: 760px) {
+    .topbar-inner {
+        padding: 10px 16px;
+        gap: 0 12px;
+    }
+
+    .brand {
+        order: 1;
+        padding: 10px 0;
+    }
+
+    /* The Menu button, on the right of the brand */
+    .menu-toggle {
+        order: 2;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: auto;
+        min-height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--black);
+        background: var(--white);
+        color: var(--black);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .menu-toggle:focus-visible {
+        outline: 2px solid var(--black);
+        outline-offset: 2px;
+    }
+
+    .menu-toggle[aria-expanded="true"] {
+        background: var(--black);
+        color: var(--white);
+    }
+
+    /* Three lines that turn into an X when the menu is open */
+    .menu-bars,
+    .menu-bars::before,
+    .menu-bars::after {
+        display: block;
+        width: 18px;
+        height: 2px;
+        background: currentColor;
+        transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .menu-bars {
+        position: relative;
+    }
+
+    .menu-bars::before,
+    .menu-bars::after {
+        content: "";
+        position: absolute;
+        left: 0;
+    }
+
+    .menu-bars::before {
+        top: -6px;
+    }
+
+    .menu-bars::after {
+        top: 6px;
+    }
+
+    .menu-toggle[aria-expanded="true"] .menu-bars {
+        background: transparent;
+    }
+
+    .menu-toggle[aria-expanded="true"] .menu-bars::before {
+        top: 0;
+        transform: rotate(45deg);
+    }
+
+    .menu-toggle[aria-expanded="true"] .menu-bars::after {
+        top: 0;
+        transform: rotate(-45deg);
+    }
+
+    /* The menu itself. With JavaScript it starts closed; without it, the links just stay visible. */
+    .topbar nav,
+    .topbar .user-box {
+        order: 3;
+        flex: 0 0 100%;
+    }
+
+    .js .topbar nav,
+    .js .topbar .user-box {
+        display: none;
+    }
+
+    .js .topbar.is-open nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        margin-top: 10px;
+        border-top: 1px solid var(--black);
+    }
+
+    .topbar nav a,
+    .mobile-only {
+        display: block;
+        padding: 14px 4px;
+        border-bottom: 1px solid var(--black);
+        font-size: 16px;
+    }
+
+    /* Links that only exist in the phone menu */
+    .topbar nav a.mobile-only {
+        display: block;
+    }
+
+    .topbar nav a[aria-current="page"] {
+        font-weight: 700;
+        border-left: 4px solid var(--black);
+        padding-left: 12px;
+    }
+
+    .js .topbar.is-open .user-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 4px 6px;
+        font-size: 15px;
+    }
+
+    .user-box .link-btn,
+    .user-box a {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .user-box .btn-small {
+        padding: 0 16px;
+        justify-content: center;
+    }
+
+    /* Without JavaScript, keep the links tidy instead of hiding them */
+    .topbar nav {
+        flex-wrap: wrap;
+    }
+}
