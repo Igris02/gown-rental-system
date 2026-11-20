@@ -1,0 +1,69 @@
+document.addEventListener('DOMContentLoaded', function () {
+    // Ask before cancelling a reservation
+    document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!window.confirm(form.dataset.confirm)) {
+                event.preventDefault();
+            }
+        });
+    });
+
+    // Catalog filters: apply the color, size, silhouette, pick-up date, and sort filters as soon
+    // as one is changed. The Search button still works for typed searches, and without JS.
+    var filterForm = document.querySelector('form[data-filters]');
+
+    if (filterForm) {
+        filterForm.querySelectorAll('select, input[type="date"]').forEach(function (field) {
+            field.addEventListener('change', function () {
+                filterForm.submit();
+            });
+        });
+    }
+
+    // Photo zoom: click the photo to open the 1200 x 1600 version
+    var trigger = document.querySelector('[data-zoom-src]');
+    var lightbox = document.querySelector('[data-lightbox]');
+
+    if (trigger && lightbox) {
+        var stage = lightbox.querySelector('[data-lightbox-stage]');
+        var zoomImage = lightbox.querySelector('[data-lightbox-image]');
+        var closeButton = lightbox.querySelector('[data-lightbox-close]');
+
+        var openLightbox = function () {
+            // The large photo only starts loading when the customer asks for it
+            zoomImage.src = trigger.dataset.zoomSrc;
+            lightbox.classList.remove('is-actual');
+            lightbox.hidden = false;
+            document.body.classList.add('no-scroll');
+            closeButton.focus();
+        };
+
+        var closeLightbox = function () {
+            lightbox.hidden = true;
+            zoomImage.removeAttribute('src');
+            document.body.classList.remove('no-scroll');
+            trigger.focus();
+        };
+
+        trigger.addEventListener('click', openLightbox);
+        closeButton.addEventListener('click', closeLightbox);
+
+        // Clicking the dark area around the photo closes the zoom view
+        lightbox.addEventListener('click', function (event) {
+            if (event.target === lightbox || event.target === stage) {
+                closeLightbox();
+            }
+        });
+
+        // Clicking the photo switches between fit-to-screen and full 1200 x 1600 size
+        zoomImage.addEventListener('click', function () {
+            lightbox.classList.toggle('is-actual');
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !lightbox.hidden) {
+                closeLightbox();
+            }
+        });
+    }
+});
