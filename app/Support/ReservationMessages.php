@@ -29,7 +29,7 @@ class ReservationMessages
      */
     public static function build(string $event, array $d): array
     {
-        $gown = "{$d['gown']} ({$d['code']})";
+        $gown = "{$d['gown']} ({$d['code']})" . (! empty($d['size']) ? ", size {$d['size']}" : '');
         $dates = [
             "Day 1, pick up: {$d['pickup']}",
             "Day 2, use: {$d['use']}",

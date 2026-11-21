@@ -19,7 +19,7 @@
 
         <div>
             <strong>{{ $gown->name }}</strong> ({{ $gown->gown_code }})<br>
-            {{ $gown->design }} &middot; {{ $gown->color }} &middot; Size {{ $gown->size }} &middot; {{ $gown->silhouette }}<br>
+            {{ $gown->design }} &middot; {{ $gown->color }} &middot; Sizes {{ $gown->size_label }} ({{ $gown->size_type_label }}) &middot; {{ $gown->silhouette }}<br>
             <strong>{{ $gown->formatted_price }}</strong>
         </div>
     </div>

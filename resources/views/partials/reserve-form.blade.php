@@ -17,7 +17,7 @@
         method="POST"
         action="{{ $walkIn ? route('admin.walk-ins.store') : route('reservations.store', $gown) }}"
         data-reserve
-        data-blocked="{{ json_encode($blockedDays) }}"
+        data-blocked-by-size="{{ json_encode($blockedBySize) }}"
         data-min="{{ $minDate }}"
         data-max="{{ $maxDate }}"
         data-selected="{{ $selected }}"
@@ -25,6 +25,33 @@
     >
         @csrf
         <input type="hidden" name="start_date" value="{{ $selected }}" data-start-input>
+
+        <div class="field size-picker">
+            <label>Size</label>
+            @if (count($sizes) === 1)
+                <input type="hidden" name="size" value="{{ $sizes[0] }}" data-size-input>
+                <p>Size {{ $sizes[0] }}</p>
+            @else
+                <div class="size-options" role="radiogroup" aria-label="Size">
+                    @foreach ($sizes as $size)
+                        <label class="size-option">
+                            <input type="radio" name="size" value="{{ $size }}" data-size-input @checked($selectedSize === $size)>
+                            <span>{{ $size }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                <p class="hint">
+                    @if ($gown->isSeparateSizes())
+                        Each size is a separate gown, so the calendar shows availability for the size you choose.
+                    @else
+                        This is one adjustable gown, so any size blocks the dates for everyone.
+                    @endif
+                </p>
+            @endif
+            @error('size')
+                <p class="error">{{ $message }}</p>
+            @enderror
+        </div>
 
         <div class="cal">
             <div class="cal-head">

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class Gown extends Model
 {
@@ -24,12 +25,20 @@ class Gown extends Model
 
     public const SIZES = ['XS', 'S', 'M', 'L', 'XL'];
 
+    public const SIZE_TYPE_SINGLE = 'single';      // one piece, fits all listed sizes
+    public const SIZE_TYPE_SEPARATE = 'separate';  // one gown per size
+
+    public const SIZE_TYPES = [self::SIZE_TYPE_SINGLE, self::SIZE_TYPE_SEPARATE];
+
+    /** Each gown has a main photo plus up to 2 extra photos, in position 1 and 2. */
+    public const EXTRA_PHOTO_SLOTS = [1, 2];
+
     protected $fillable = [
         'gown_code',
         'name',
         'design',
         'color',
-        'size',
+        'size_type',
         'silhouette',
         'rental_price',
         'description',
@@ -54,6 +63,47 @@ class Gown extends Model
             ->distinct()
             ->orderBy('silhouette')
             ->pluck('silhouette');
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(GownPhoto::class)->orderBy('position');
+    }
+
+    public function sizes(): HasMany
+    {
+        return $this->hasMany(GownSize::class);
+    }
+
+    /**
+     * Sizes in the order of Gown::SIZES, for example ['M', 'L', 'XL'].
+     *
+     * @return string[]
+     */
+    public function sizeList(): array
+    {
+        $order = array_flip(self::SIZES);
+
+        return $this->sizes->pluck('size')
+            ->sortBy(fn ($size) => $order[$size] ?? 99)
+            ->values()
+            ->all();
+    }
+
+    /** "M / L / XL" */
+    public function getSizeLabelAttribute(): string
+    {
+        return implode(' / ', $this->sizeList()) ?: '—';
+    }
+
+    public function isSeparateSizes(): bool
+    {
+        return $this->size_type === self::SIZE_TYPE_SEPARATE;
+    }
+
+    public function getSizeTypeLabelAttribute(): string
+    {
+        return $this->isSeparateSizes() ? 'Separate gown per size' : 'One piece, all sizes';
     }
 
     public function reservations(): HasMany
@@ -117,14 +167,35 @@ class Gown extends Model
     }
 
     /**
-     * Gowns with no active reservation on any day from $start to $end (Y-m-d strings).
+     * Gowns that can be rented on every day from $start to $end (Y-m-d strings).
+     * One-piece gowns need no active reservation at all. Separate gowns need at least one size that is free.
      */
     public function scopeFreeBetween(Builder $query, string $start, string $end): Builder
     {
-        return $query->whereDoesntHave(
-            'reservations',
-            fn ($reservations) => $reservations->active()->overlapping($start, $end)
-        );
+        $active = Reservation::ACTIVE_STATUSES;
+
+        return $query->where(function (Builder $q) use ($start, $end, $active) {
+            $q->where(function (Builder $q) use ($start, $end) {
+                $q->where('size_type', self::SIZE_TYPE_SINGLE)
+                    ->whereDoesntHave('reservations', fn ($r) => $r->active()->overlapping($start, $end));
+            })->orWhere(function (Builder $q) use ($start, $end, $active) {
+                $q->where('size_type', self::SIZE_TYPE_SEPARATE)
+                    ->whereExists(function ($sizes) use ($start, $end, $active) {
+                        $sizes->select(DB::raw(1))
+                            ->from('gown_sizes')
+                            ->whereColumn('gown_sizes.gown_id', 'gowns.id')
+                            ->whereNotExists(function ($taken) use ($start, $end, $active) {
+                                $taken->select(DB::raw(1))
+                                    ->from('reservations')
+                                    ->whereColumn('reservations.gown_id', 'gown_sizes.gown_id')
+                                    ->whereColumn('reservations.size', 'gown_sizes.size')
+                                    ->whereIn('reservations.status', $active)
+                                    ->where('reservations.start_date', '<=', $end)
+                                    ->where('reservations.end_date', '>=', $start);
+                            });
+                    });
+            });
+        });
     }
 
     /**
@@ -134,7 +205,7 @@ class Gown extends Model
     {
         return $query
             ->when($filters['color'] ?? null, fn ($q, $v) => $q->where('color', $v))
-            ->when($filters['size'] ?? null, fn ($q, $v) => $q->where('size', $v))
+            ->when($filters['size'] ?? null, fn ($q, $v) => $q->whereHas('sizes', fn ($s) => $s->where('size', $v)))
             ->when($filters['silhouette'] ?? null, fn ($q, $v) => $q->where('silhouette', $v))
             ->when($filters['search'] ?? null, function ($q, $v) {
                 $q->where(function ($q) use ($v) {

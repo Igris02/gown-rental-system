@@ -125,7 +125,7 @@
                     <div class="card-body">
                         <p class="card-code">{{ $gown->gown_code }}</p>
                         <h2>{{ $gown->name }}</h2>
-                        <p class="card-meta">{{ $gown->color }} &middot; {{ $gown->silhouette }} &middot; Size {{ $gown->size }}</p>
+                        <p class="card-meta">{{ $gown->color }} &middot; {{ $gown->silhouette }} &middot; Sizes {{ $gown->size_label }}</p>
                         <p class="card-price">{{ $gown->formatted_price }}</p>
                     </div>
                 </a>

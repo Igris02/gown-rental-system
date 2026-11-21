@@ -71,15 +71,40 @@
             @enderror
         </div>
 
-        <div class="field">
-            <label for="size">Size</label>
-            <select id="size" name="size" required class="@error('size') is-invalid @enderror">
-                <option value="">Choose a size</option>
+        <div class="field full">
+            <label>Sizes</label>
+            @php($chosen = old('sizes', $gown->exists ? $gown->sizeList() : []))
+            <div class="size-checks">
                 @foreach ($sizes as $size)
-                    <option value="{{ $size }}" @selected(old('size', $gown->size) === $size)>{{ $size }}</option>
+                    <label class="check">
+                        <input type="checkbox" name="sizes[]" value="{{ $size }}" @checked(in_array($size, $chosen, true))>
+                        {{ $size }}
+                    </label>
                 @endforeach
-            </select>
-            @error('size')
+            </div>
+            <p class="hint">Tick every size this gown comes in, for example M / L / XL.</p>
+            @error('sizes')
+                <p class="error">{{ $message }}</p>
+            @enderror
+            @error('sizes.*')
+                <p class="error">{{ $message }}</p>
+            @enderror
+        </div>
+
+        <div class="field full">
+            <label>How do these sizes work?</label>
+            @php($type = old('size_type', $gown->size_type ?? 'single'))
+            <div class="size-types">
+                <label class="check">
+                    <input type="radio" name="size_type" value="single" @checked($type === 'single')>
+                    <span><strong>One piece, all sizes.</strong> One physical gown that fits every ticked size (adjustable or altered). Only one customer can rent it at a time, whichever size they pick.</span>
+                </label>
+                <label class="check">
+                    <input type="radio" name="size_type" value="separate" @checked($type === 'separate')>
+                    <span><strong>Separate gown for each size.</strong> Same design, one physical gown per size. Each size is booked on its own, so M and L can be rented on the same days.</span>
+                </label>
+            </div>
+            @error('size_type')
                 <p class="error">{{ $message }}</p>
             @enderror
         </div>
@@ -184,6 +209,8 @@
 
             <img src="" alt="Preview of the selected photo" class="preview" data-image-preview hidden>
         </div>
+
+        @include('admin.gowns._extra-photos')
     </div>
 
     <div class="form-actions">

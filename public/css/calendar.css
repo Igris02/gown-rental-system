@@ -226,3 +226,38 @@ button.btn:disabled:hover {
     background: var(--black);
     color: var(--white);
 }
+
+/* Size picker (customer and walk-in) and size tick boxes (admin gown form) */
+.size-options,
+.size-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+}
+
+.size-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 52px;
+    margin: 0;
+    padding: 8px 14px;
+    border: 1px solid var(--black);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.size-option:has(input:checked) {
+    background: var(--black);
+    color: var(--white);
+}
+
+.size-types {
+    display: grid;
+    gap: 10px;
+}
+
+.size-types .check {
+    align-items: flex-start;
+}

@@ -76,7 +76,7 @@
                                 @endif
                                 <span>
                                     <strong>{{ $reservation->gown->name }}</strong><br>
-                                    {{ $reservation->gown->gown_code }}
+                                    {{ $reservation->gown->gown_code }}@if ($reservation->size)<br>Size {{ $reservation->size }}@endif
                                 </span>
                             </div>
                         </td>

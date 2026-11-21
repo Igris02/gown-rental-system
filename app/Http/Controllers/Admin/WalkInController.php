@@ -35,9 +35,13 @@ class WalkInController extends Controller
                 : null;
 
             if ($gown) {
+                $sizes = $gown->sizeList();
+
                 return view('admin.walk-ins.create', [
                     'gown' => $gown,
-                    'blockedDays' => $this->reservations->blockedDays($gown, ReservationService::walkInEarliestStart()),
+                    'sizes' => $sizes,
+                    'selectedSize' => ReservationService::pickSize($sizes, old('size', $request->query('size'))),
+                    'blockedBySize' => $this->reservations->blockedBySize($gown, ReservationService::walkInEarliestStart()),
                     'minDate' => ReservationService::walkInEarliestStart(),
                     'maxDate' => ReservationService::latestStart(),
                     'selected' => ReservationService::validWalkInPickupOrNull(
@@ -54,6 +58,7 @@ class WalkInController extends Controller
         $search = is_string($request->query('search')) ? trim($request->query('search')) : '';
 
         $gowns = Gown::query()
+            ->with('sizes')
             ->available()
             ->filter(['search' => $search])
             ->when($pickup, fn ($query) => $query->freeBetween($pickup, ReservationService::endDate($pickup)))
@@ -75,6 +80,7 @@ class WalkInController extends Controller
     {
         $data = $request->validate([
             'gown_id' => ['required', 'integer'],
+            'size' => ['required', 'string', 'max:20'],
             'start_date' => ['required', 'string'],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:30', 'regex:/^[0-9+()\-\s]{7,30}$/'],
@@ -82,6 +88,7 @@ class WalkInController extends Controller
             'customer_note' => ['nullable', 'string', 'max:500'],
         ], [
             'start_date.required' => 'Please choose the pick-up date on the calendar.',
+            'size.required' => 'Please choose a size.',
             'customer_name.required' => "Please enter the customer's name.",
             'customer_phone.required' => "Please enter the customer's phone number.",
             'customer_phone.regex' => 'Please enter a valid phone number, such as 0917 123 4567.',
@@ -93,6 +100,7 @@ class WalkInController extends Controller
                 $request->user(),
                 (int) $data['gown_id'],
                 $data['start_date'],
+                $data['size'],
                 [
                     'name' => $data['customer_name'],
                     'phone' => $data['customer_phone'],

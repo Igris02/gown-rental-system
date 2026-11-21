@@ -75,7 +75,7 @@
                         <td>{{ $gown->name }}</td>
                         <td>{{ $gown->design }}</td>
                         <td>{{ $gown->color }}</td>
-                        <td>{{ $gown->size }}</td>
+                        <td>{{ $gown->size_label }}<br><small>{{ $gown->size_type_label }}</small></td>
                         <td>{{ $gown->silhouette }}</td>
                         <td>{{ $gown->formatted_price }}</td>
                         <td><span class="badge badge-{{ $gown->status }}">{{ ucfirst($gown->status) }}</span></td>

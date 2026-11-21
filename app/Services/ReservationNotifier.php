@@ -169,6 +169,7 @@ class ReservationNotifier
             'reference' => $reservation->reference,
             'gown' => $gown->name,
             'code' => $gown->gown_code,
+            'size' => $reservation->size,
             'pickup' => $reservation->start_date->format('D, M j, Y'),
             'use' => $reservation->use_date->format('D, M j, Y'),
             'return' => $reservation->end_date->format('D, M j, Y'),

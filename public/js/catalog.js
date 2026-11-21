@@ -38,15 +38,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Photo zoom: click the photo to open the 1200 x 1600 version
-    var trigger = document.querySelector('[data-zoom-src]');
+    var triggers = document.querySelectorAll('[data-zoom-src]');
+    var activeTrigger = null;
     var lightbox = document.querySelector('[data-lightbox]');
 
-    if (trigger && lightbox) {
+    if (triggers.length && lightbox) {
         var stage = lightbox.querySelector('[data-lightbox-stage]');
         var zoomImage = lightbox.querySelector('[data-lightbox-image]');
         var closeButton = lightbox.querySelector('[data-lightbox-close]');
 
-        var openLightbox = function () {
+        var openLightbox = function (trigger) {
+            activeTrigger = trigger;
             // The large photo only starts loading when the customer asks for it
             zoomImage.src = trigger.dataset.zoomSrc;
             lightbox.classList.remove('is-actual');
@@ -59,10 +61,16 @@ document.addEventListener('DOMContentLoaded', function () {
             lightbox.hidden = true;
             zoomImage.removeAttribute('src');
             document.body.classList.remove('no-scroll');
-            trigger.focus();
+            if (activeTrigger) {
+                activeTrigger.focus();
+            }
         };
 
-        trigger.addEventListener('click', openLightbox);
+        triggers.forEach(function (trigger) {
+            trigger.addEventListener('click', function () {
+                openLightbox(trigger);
+            });
+        });
         closeButton.addEventListener('click', closeLightbox);
 
         // Clicking the dark area around the photo closes the zoom view

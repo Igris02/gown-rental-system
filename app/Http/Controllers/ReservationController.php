@@ -35,10 +35,12 @@ class ReservationController extends Controller
     {
         $data = $request->validate([
             'start_date' => ['required', 'string'],
+            'size' => ['required', 'string', 'max:20'],
             'customer_phone' => ['nullable', 'string', 'max:30', 'regex:/^[0-9+()\-\s]{7,30}$/'],
             'customer_note' => ['nullable', 'string', 'max:500'],
         ], [
             'start_date.required' => 'Please choose your pick-up date on the calendar.',
+            'size.required' => 'Please choose a size.',
             'customer_phone.regex' => 'Please enter a valid mobile number, such as 0917 123 4567.',
             'customer_note.max' => 'Your note must not be longer than 500 characters.',
         ]);
@@ -48,6 +50,7 @@ class ReservationController extends Controller
                 $request->user(),
                 $gown->id,
                 $data['start_date'],
+                $data['size'],
                 $data['customer_note'] ?? null,
                 $data['customer_phone'] ?? null
             );

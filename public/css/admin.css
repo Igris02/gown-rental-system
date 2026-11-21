@@ -618,3 +618,37 @@ tbody tr:last-child td {
 .report .table-wrap {
     margin-bottom: 8px;
 }
+
+/* Extra photo slots on the gown form */
+.extra-slots {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.extra-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--black);
+}
+
+.extra-title {
+    margin: 0;
+    font-weight: 600;
+}
+
+.preview-small {
+    max-width: 120px;
+    max-height: 160px;
+    margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+    .extra-slots {
+        grid-template-columns: 1fr;
+    }
+}

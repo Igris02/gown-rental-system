@@ -24,8 +24,10 @@ class ReportService
          AND a.id < b.id
          AND a.start_date <= b.end_date
          AND a.end_date >= b.start_date
+        JOIN gowns g ON g.id = a.gown_id
         WHERE a.status IN ('pending', 'confirmed', 'picked_up')
           AND b.status IN ('pending', 'confirmed', 'picked_up')
+          AND (g.size_type = 'single' OR a.size = b.size)
     SQL;
 
     private const CONFIRMED_STATES = ['confirmed', 'picked_up', 'returned'];

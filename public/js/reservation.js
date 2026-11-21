@@ -17,7 +17,9 @@
     var DAY_MS = 86400000;
     var RENTAL_DAYS = 3;
 
-    var blocked = new Set(readList(root.dataset.blocked));
+    var blockedBySize = readMap(root.dataset.blockedBySize);
+    var sizeInputs = root.querySelectorAll('[data-size-input]');
+    var blocked = new Set();
     var minDate = root.dataset.min;
     var maxDate = root.dataset.max;
     var price = root.dataset.price || '';
@@ -43,6 +45,33 @@
         } catch (e) {
             return [];
         }
+    }
+
+    function readMap(text) {
+        try {
+            var map = JSON.parse(text || '{}');
+            return map && typeof map === 'object' ? map : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    // The size picked right now (a hidden input when the gown has only one size)
+    function currentSize() {
+        var size = '';
+
+        sizeInputs.forEach(function (input) {
+            if (input.type === 'hidden' || input.checked) {
+                size = input.value;
+            }
+        });
+
+        return size;
+    }
+
+    // Use the blocked days that belong to the chosen size
+    function loadBlocked() {
+        blocked = new Set(blockedBySize[currentSize()] || []);
     }
 
     function toTime(date) {
@@ -168,6 +197,7 @@
         }
 
         [
+            ['Size', null],
             ['Day 1 · Pick up', selected],
             ['Day 2 · Use', addDays(selected, 1)],
             ['Day 3 · Return', addDays(selected, 2)]
@@ -177,7 +207,7 @@
             var value = document.createElement('span');
 
             name.textContent = row[0];
-            value.textContent = pretty(row[1]);
+            value.textContent = row[1] === null ? currentSize() : pretty(row[1]);
             line.appendChild(name);
             line.appendChild(value);
             summary.appendChild(line);
@@ -250,9 +280,53 @@
         showSummary();
     });
 
+    sizeInputs.forEach(function (input) {
+        input.addEventListener('change', function () {
+            loadBlocked();
+
+            // The chosen dates may be taken in the new size
+            if (selected && !canStart(selected)) {
+                selected = '';
+                startInput.value = '';
+            }
+
+            render();
+            showSummary();
+        });
+    });
+
     // ---- Start
 
     var preset = root.dataset.selected;
+
+    loadBlocked();
+
+    // A date chosen on the catalog may be taken in the default size: try the other sizes
+    if (preset && !canStart(preset)) {
+        var original = null;
+        var found = false;
+
+        sizeInputs.forEach(function (input) {
+            if (input.type === 'radio' && input.checked) {
+                original = input;
+            }
+        });
+
+        sizeInputs.forEach(function (input) {
+            if (found || input.type !== 'radio') {
+                return;
+            }
+
+            input.checked = true;
+            loadBlocked();
+            found = canStart(preset);
+        });
+
+        if (!found && original) {
+            original.checked = true;
+            loadBlocked();
+        }
+    }
 
     if (preset && canStart(preset)) {
         selected = preset;

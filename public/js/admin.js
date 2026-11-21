@@ -39,6 +39,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Preview and size check for the two extra photos
+    document.querySelectorAll('[data-extra-input]').forEach(function (input) {
+        var slot = input.closest('[data-extra-slot]');
+        var extraPreview = slot.querySelector('[data-extra-preview]');
+        var extraError = slot.querySelector('[data-extra-error]');
+
+        input.addEventListener('change', function () {
+            var file = input.files[0];
+
+            extraError.hidden = true;
+            extraPreview.hidden = true;
+            extraPreview.removeAttribute('src');
+
+            if (!file) {
+                return;
+            }
+
+            if (file.size > MAX_BYTES) {
+                input.value = '';
+                extraError.hidden = false;
+                return;
+            }
+
+            extraPreview.src = URL.createObjectURL(file);
+            extraPreview.hidden = false;
+        });
+    });
+
     // Stop double submits while a photo is uploading
     var form = document.querySelector('form[data-gown-form]');
 

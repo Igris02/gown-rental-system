@@ -28,6 +28,7 @@ class CatalogController extends Controller
 
         // Customers only ever see gowns marked "available"
         $query = Gown::query()
+            ->with('sizes')
             ->available()
             ->filter($filters)
             ->when($pickup, fn ($q) => $q->freeBetween($pickup, ReservationService::endDate($pickup)));
@@ -64,9 +65,14 @@ class CatalogController extends Controller
         // or when the form is shown again after an error
         $selected = ReservationService::validPickupOrNull(old('start_date', $request->query('date'))) ?? '';
 
+        $gown->load('sizes', 'photos');
+        $sizes = $gown->sizeList();
+
         return view('catalog.show', [
             'gown' => $gown,
-            'blockedDays' => $this->reservations->blockedDays($gown),
+            'sizes' => $sizes,
+            'selectedSize' => ReservationService::pickSize($sizes, old('size', $request->query('size'))),
+            'blockedBySize' => $this->reservations->blockedBySize($gown),
             'minDate' => ReservationService::earliestStart(),
             'maxDate' => ReservationService::latestStart(),
             'selected' => $selected,

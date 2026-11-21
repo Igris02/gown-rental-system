@@ -141,12 +141,14 @@ class ReservationService
     /**
      * Is the gown free on every day from $start to $end?
      * With $lock = true the matching rows are locked until the transaction ends.
+     * With $size, only reservations for that size count (used for gowns that have a separate gown per size).
      */
-    public function isFree(int $gownId, string $start, string $end, bool $lock = false): bool
+    public function isFree(int $gownId, string $start, string $end, bool $lock = false, ?string $size = null): bool
     {
         $query = Reservation::query()
             ->active()
             ->where('gown_id', $gownId)
+            ->when($size !== null, fn ($q) => $q->where('size', $size))
             ->overlapping($start, $end);
 
         if ($lock) {
@@ -157,50 +159,73 @@ class ReservationService
     }
 
     /**
-     * Every day this gown is already held, for the calendar on the gown page.
+     * Blocked days for each size of the gown, for the calendar on the gown page:
+     * ['M' => ['2026-12-01', ...], 'L' => [...]].
+     * A one-piece gown blocks every size. A separate-per-size gown blocks only the size that was booked.
      * The calendar starts on $from (tomorrow for customers, today for walk-ins).
      *
-     * @return string[]
+     * @return array<string, string[]>
      */
-    public function blockedDays(Gown $gown, ?string $from = null): array
+    public function blockedBySize(Gown $gown, ?string $from = null): array
     {
         $from ??= self::earliestStart();
         $to = self::endDate(self::latestStart());
 
-        $days = [];
+        $sizes = $gown->sizeList();
+        $map = array_fill_keys($sizes, []);
 
         $reservations = Reservation::query()
             ->active()
             ->where('gown_id', $gown->id)
             ->overlapping($from, $to)
-            ->get(['start_date', 'end_date']);
+            ->get(['start_date', 'end_date', 'size']);
 
         foreach ($reservations as $reservation) {
-            foreach (self::datesBetween($reservation->start_date->toDateString(), $reservation->end_date->toDateString()) as $day) {
-                $days[$day] = true;
+            $days = self::datesBetween($reservation->start_date->toDateString(), $reservation->end_date->toDateString());
+            $targets = $gown->isSeparateSizes() ? [$reservation->size] : $sizes;
+
+            foreach ($targets as $size) {
+                if (! isset($map[$size])) {
+                    continue;
+                }
+
+                foreach ($days as $day) {
+                    $map[$size][$day] = true;
+                }
             }
         }
 
-        $days = array_keys($days);
-        sort($days);
+        return array_map(function ($days) {
+            $days = array_keys($days);
+            sort($days);
 
-        return $days;
+            return $days;
+        }, $map);
     }
 
+    /**
+     * The size to pre-select: the requested one if the gown has it, otherwise the first size.
+     *
+     * @param string[] $sizes
+     */
+    public static function pickSize(array $sizes, mixed $wanted): string
+    {
+        return is_string($wanted) && in_array($wanted, $sizes, true) ? $wanted : ($sizes[0] ?? '');
+    }
     // ---------------------------------------------------------------------------------
     // Booking and status changes
     // ---------------------------------------------------------------------------------
 
     /**
-     * A customer books a gown online for 3 days starting on $start. The reservation starts
-     * as pending and waits for staff. Throws ReservationException with a message that can
-     * be shown on screen when a rule is broken.
+     * A customer books a gown online for 3 days starting on $start, in the chosen $size. The
+     * reservation starts as pending and waits for staff. Throws ReservationException with a
+     * message that can be shown on screen when a rule is broken.
      */
-    public function create(User $user, int $gownId, mixed $start, ?string $note = null, ?string $phone = null): Reservation
+    public function create(User $user, int $gownId, mixed $start, ?string $size, ?string $note = null, ?string $phone = null): Reservation
     {
         $startDate = $this->checkedStartDate($start, self::earliestStart());
 
-        return $this->book($gownId, $startDate, [
+        return $this->book($gownId, $startDate, $size, [
             'user_id' => $user->id,
             'status' => Reservation::STATUS_PENDING,
             'source' => Reservation::SOURCE_ONLINE,
@@ -216,7 +241,7 @@ class ReservationService
      *
      * @param array{name?: ?string, phone?: ?string, email?: ?string} $customer
      */
-    public function createWalkIn(User $staff, int $gownId, mixed $start, array $customer, ?string $note = null): Reservation
+    public function createWalkIn(User $staff, int $gownId, mixed $start, ?string $size, array $customer, ?string $note = null): Reservation
     {
         $startDate = $this->checkedStartDate($start, self::walkInEarliestStart());
 
@@ -227,7 +252,7 @@ class ReservationService
             throw new ReservationException("Please enter the customer's name and phone number.");
         }
 
-        return $this->book($gownId, $startDate, [
+        return $this->book($gownId, $startDate, $size, [
             'user_id' => null,
             'status' => Reservation::STATUS_CONFIRMED,
             'confirmed_at' => now(),
@@ -239,7 +264,6 @@ class ReservationService
             'created_by' => $staff->id,
         ]);
     }
-
     /**
      * Moves a reservation to a new status, only when the move is allowed.
      */
@@ -333,11 +357,11 @@ class ReservationService
      *
      * @param array<string, mixed> $attributes who is booking and how
      */
-    private function book(int $gownId, string $startDate, array $attributes): Reservation
+    private function book(int $gownId, string $startDate, ?string $size, array $attributes): Reservation
     {
         $endDate = self::endDate($startDate);
 
-        return DB::transaction(function () use ($gownId, $startDate, $endDate, $attributes) {
+        return DB::transaction(function () use ($gownId, $startDate, $endDate, $size, $attributes) {
             // Lock this gown's row first. Anyone else booking the same gown, online or at the
             // shop, has to wait here until this transaction finishes, so two bookings can never
             // both pass the check.
@@ -347,14 +371,28 @@ class ReservationService
                 throw new ReservationException('This gown is not available for reservation.');
             }
 
-            if (! $this->isFree($gown->id, $startDate, $endDate, lock: true)) {
+            $sizes = $gown->sizeList();
+            $size = $this->cleanText($size) ?? (count($sizes) === 1 ? $sizes[0] : null);
+
+            if ($size === null || ! in_array($size, $sizes, true)) {
+                throw new ReservationException('Please choose one of the available sizes for this gown.');
+            }
+
+            // A gown with a separate piece per size is checked per size.
+            // A one-piece gown is checked as a whole, whichever size was picked.
+            $checkSize = $gown->isSeparateSizes() ? $size : null;
+
+            if (! $this->isFree($gown->id, $startDate, $endDate, lock: true, size: $checkSize)) {
                 throw new ReservationException(
-                    'Sorry, this gown is already reserved on at least one of those days. Please choose another pick-up date.'
+                    'Sorry, this gown is already reserved on at least one of those days'
+                    . ($checkSize ? " in size {$size}" : '')
+                    . '. Please choose another pick-up date' . ($checkSize ? ' or size.' : '.')
                 );
             }
 
             return Reservation::create($attributes + [
                 'gown_id' => $gown->id,
+                'size' => $size,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'rental_price' => $gown->rental_price,

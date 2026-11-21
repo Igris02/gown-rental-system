@@ -6,8 +6,12 @@
     <p class="back"><a href="{{ route('catalog.index') }}">&larr; Back to catalog</a></p>
 
     <div class="detail">
-        <div class="detail-image">
-            @include('partials.photo-zoom', ['gown' => $gown])
+        <div class="detail-media">
+            <div class="detail-image">
+                @include('partials.photo-zoom', ['gown' => $gown])
+            </div>
+
+            @include('partials.extra-photos', ['gown' => $gown])
         </div>
 
         <div class="detail-info">
@@ -22,7 +26,7 @@
                 <dt>Color</dt>
                 <dd>{{ $gown->color }}</dd>
                 <dt>Size</dt>
-                <dd>{{ $gown->size }}</dd>
+                <dd>{{ $gown->size_label }}</dd>
                 <dt>Silhouette</dt>
                 <dd>{{ $gown->silhouette }}</dd>
             </dl>
